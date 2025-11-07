@@ -1,0 +1,5 @@
+id,text
+ServiceNow incidents in APTech caused delays due to misconfigured automation scripts, increasing MTTR.
+Incident SLA compliance dropped 12% last quarter because of longer resolution times.,
+MTTR improvements were achieved by optimizing SQL validation processes and reducing ServiceNow ticket reassignment.,
+Tableau dashboards visualize incident volume and resolution rates for executive reports.,
