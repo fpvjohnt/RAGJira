@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jira Ticket Assistant</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header with Profile -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="logo">
+                    <span class="logo-icon">🎯</span>
+                    Jira Ticket Assistant
+                </h1>
+                <div class="header-right">
+                    <div class="stats-bar" id="statsBar">
+                        <div class="stat-item">
+                            <span class="stat-label">Total Tickets</span>
+                            <span class="stat-value" id="totalTickets">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Indexed</span>
+                            <span class="stat-value" id="indexedTickets">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Status</span>
+                            <span class="stat-value status-ok" id="systemStatus">Ready</span>
+                        </div>
+                    </div>
+                    <div class="profile-section">
+                        <div class="profile-avatar">👤</div>
+                        <div class="profile-info">
+                            <div class="profile-name">Support Team</div>
+                            <div class="profile-role">Administrator</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Category Navigation -->
+        <nav class="category-nav" id="categoryNav">
+            <div class="category-list">
+                <!-- Categories loaded dynamically -->
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Search Section -->
+            <section class="search-section">
+                <div class="search-container">
+                    <div class="search-header">
+                        <h2>Find Similar Tickets</h2>
+                        <p class="search-subtitle">Search through your Jira tickets using natural language or keywords</p>
+                    </div>
+
+                    <form id="searchForm" class="search-form">
+                        <div class="search-input-group">
+                            <input
+                                type="text"
+                                id="searchInput"
+                                class="search-input"
+                                placeholder="e.g., Camera replacement issues at store 137"
+                                autocomplete="off"
+                            >
+                            <button type="submit" class="search-button" id="searchButton">
+                                <span class="button-text">Search</span>
+                                <span class="button-loader" style="display: none;">
+                                    <span class="loader"></span>
+                                </span>
+                            </button>
+                        </div>
+
+                        <div class="search-suggestions">
+                            <span class="suggestion-label">Quick Search:</span>
+                            <button type="button" class="suggestion-pill" data-query="Camera issues and replacements">📹 Camera Issues</button>
+                            <button type="button" class="suggestion-pill" data-query="Door access control problems">🚪 Door Access</button>
+                            <button type="button" class="suggestion-pill" data-query="Network and connectivity issues">🌐 Network Issues</button>
+                            <button type="button" class="suggestion-pill" data-query="Hardware failures">🔧 Hardware Problems</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section" id="resultsSection" style="display: none;">
+                <!-- AI Answer -->
+                <div class="answer-card">
+                    <div class="card-header">
+                        <h3>🤖 AI Summary</h3>
+                    </div>
+                    <div class="card-body">
+                        <p id="aiAnswer" class="ai-answer-text"></p>
+                    </div>
+                </div>
+
+                <!-- Similar Tickets -->
+                <div class="tickets-card">
+                    <div class="card-header">
+                        <h3>📋 Similar Tickets</h3>
+                        <span class="ticket-count" id="ticketCount">0 tickets</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="ticketsList" class="tickets-list"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Empty State -->
+            <section class="empty-state" id="emptyState">
+                <div class="empty-state-icon">🔍</div>
+                <h3>Start Searching</h3>
+                <p>Enter a question or issue description above to find relevant tickets and get AI-powered insights</p>
+            </section>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

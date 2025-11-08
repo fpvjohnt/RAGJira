@@ -4,3 +4,5 @@ faiss-cpu
 datasets
 langchain
 pandas
+flask
+flask-cors
