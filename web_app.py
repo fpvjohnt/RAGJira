@@ -258,7 +258,13 @@ def health():
     """Health check endpoint."""
     return jsonify({
         "status": "ok",
-        "models_loaded": all([encoder, tokenizer, model, index, reference_df])
+        "models_loaded": all([
+            encoder is not None,
+            tokenizer is not None,
+            model is not None,
+            index is not None,
+            reference_df is not None
+        ])
     })
 
 
@@ -297,6 +303,121 @@ def categories():
             }
 
     return jsonify(category_counts)
+
+
+@app.route("/api/all-tickets")
+def all_tickets():
+    """Get all tickets with their complete information."""
+    if reference_df is None:
+        return jsonify({"error": "Data not loaded"}), 500
+
+    try:
+        tickets_list = []
+
+        for idx, ref_row in reference_df.iterrows():
+            ticket_key = str(ref_row.get("Ticket Key", ref_row.get("Key", f"Ticket-{idx}")))
+
+            ticket_data = {
+                "ticket_id": ticket_key,
+                "summary": str(ref_row.get("Summary", "N/A")),
+                "status": str(ref_row.get("Status", "N/A")),
+            }
+
+            # Add all additional fields from original CSV if available
+            if original_df is not None:
+                orig_ticket = original_df[original_df["Ticket Key"] == ticket_key]
+                if not orig_ticket.empty:
+                    orig_row = orig_ticket.iloc[0]
+
+                    # Format store number without decimals
+                    store_num = orig_row.get("Store Number")
+                    if pd.notna(store_num):
+                        try:
+                            store_number = str(int(float(store_num)))
+                        except (ValueError, TypeError):
+                            store_number = None
+                    else:
+                        store_number = None
+
+                    ticket_data.update({
+                        "store_number": store_number,
+                        "priority": str(orig_row.get("Priority", "")) if pd.notna(orig_row.get("Priority")) else None,
+                        "business_priority": str(orig_row.get("Business Priority", "")) if pd.notna(orig_row.get("Business Priority")) else None,
+                        "description": str(orig_row.get("Description", ""))[:200] if pd.notna(orig_row.get("Description")) else None,
+                        "assignee": str(orig_row.get("Assignee", "")) if pd.notna(orig_row.get("Assignee")) else None,
+                        "reporter": str(orig_row.get("Reporter", "")) if pd.notna(orig_row.get("Reporter")) else None,
+                        "created": str(orig_row.get("Created", "")) if pd.notna(orig_row.get("Created")) else None,
+                        "updated": str(orig_row.get("Updated", "")) if pd.notna(orig_row.get("Updated")) else None,
+                        "epic_link": str(orig_row.get("Epic Link", "")) if pd.notna(orig_row.get("Epic Link")) else None,
+                    })
+
+            tickets_list.append(ticket_data)
+
+        return jsonify({
+            "tickets": tickets_list,
+            "total": len(tickets_list)
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/charts/data")
+def charts_data():
+    """Get data for charts and analytics."""
+    if reference_df is None or original_df is None:
+        return jsonify({"error": "Data not loaded"}), 500
+
+    try:
+        # Status distribution
+        status_counts = {}
+        if "Status" in reference_df.columns:
+            status_counts = reference_df["Status"].value_counts().to_dict()
+
+        # Priority distribution
+        priority_counts = {}
+        if original_df is not None and "Priority" in original_df.columns:
+            priority_counts = original_df["Priority"].fillna("Not Set").value_counts().to_dict()
+
+        # Category distribution
+        categories = {
+            "Camera": ["camera", "ptz", "surveillance", "cctv"],
+            "Door/Access": ["door", "access", "lock", "entry", "ada"],
+            "Network": ["network", "connectivity", "internet", "wifi", "router"],
+            "Hardware": ["hardware", "replacement", "equipment", "device"],
+        }
+
+        category_counts = {}
+        for cat_name, keywords in categories.items():
+            mask = reference_df["Cleaned_Text"].str.contains(
+                '|'.join(keywords), case=False, na=False
+            )
+            category_counts[cat_name] = int(mask.sum())
+
+        # Assignee distribution (top 10)
+        assignee_counts = {}
+        if original_df is not None and "Assignee" in original_df.columns:
+            assignee_counts = original_df["Assignee"].fillna("Unassigned").value_counts().head(10).to_dict()
+
+        # Monthly trend (if date available)
+        monthly_trend = {}
+        if original_df is not None and "Created" in original_df.columns:
+            try:
+                original_df['Created_Date'] = pd.to_datetime(original_df['Created'], errors='coerce')
+                monthly_counts = original_df.groupby(original_df['Created_Date'].dt.to_period('M')).size()
+                monthly_trend = {str(k): int(v) for k, v in monthly_counts.to_dict().items()}
+            except Exception as e:
+                print(f"Error processing monthly trend: {e}")
+
+        return jsonify({
+            "status_distribution": status_counts,
+            "priority_distribution": priority_counts,
+            "category_distribution": category_counts,
+            "assignee_distribution": assignee_counts,
+            "monthly_trend": monthly_trend,
+            "total_tickets": len(reference_df)
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
