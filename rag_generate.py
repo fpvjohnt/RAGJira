@@ -21,16 +21,34 @@ generator = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-base")
 query = input("\nAsk your analytical question: ")
 
 # Step 4: Encode and search for top matches
+if index.ntotal == 0:
+    raise ValueError("❌ The FAISS index is empty. Run rag_index.py to build it before querying.")
+
 query_vector = embedder.encode([query])
-k = 3  # you can raise this to 5 for more context
+k = min(3, index.ntotal)  # avoid requesting more vectors than exist
 D, I = index.search(np.array(query_vector, dtype=np.float32), k)
 
 # Step 5: Safely build the context from retrieved text
 context_parts = []
+available_columns = [col for col in ("Rewritten_Text", "Cleaned_Text", "text") if col in df.columns]
+
 for idx in I[0]:
-    if pd.notnull(df.iloc[idx]['text']):
-        context_parts.append(str(df.iloc[idx]['text']))
+    if idx == -1:
+        continue
+
+    row = df.iloc[idx]
+    snippet = next((str(row[col]) for col in available_columns if pd.notna(row[col]) and str(row[col]).strip()), "")
+
+    if snippet:
+        context_parts.append(snippet)
+
 context = " ".join(context_parts)
+
+if not context.strip():
+    context = (
+        "No detailed ticket narratives were retrieved. Summarize typical monitoring "
+        "camera incidents, focusing on operational impact, common causes, and actions taken."
+    )
 
 # Step 6: Build the analytical prompt
 prompt = (
