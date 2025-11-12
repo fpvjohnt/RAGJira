@@ -1,6 +1,8 @@
 transformers
 sentence-transformers
 faiss-cpu
+torch
+numpy
 datasets
 langchain
 pandas
